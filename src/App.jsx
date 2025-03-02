@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import 'bootstrap/dist/css/bootstrap.min.css'
-import FooterPage from './Items/Footer'
+import FooterPage from './items/Footer'
 import './App.css'
 
 function App() {
@@ -10,36 +11,39 @@ function App() {
   const [inputValue, setInputValue] = useState('');
   const [outputValue, setOutputValue] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    if(e){
-        e.preventDefault();
-    }
-    setLoading(true);
+  const [promptResponses, setpromptResponses] = useState([]);
+  const genAI = new GoogleGenerativeAI(
+    "AIzaSyCqs91E1J3Stlzr1vFSrlhLH2EQPnmfv8Q"
+  );
+  
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+  };
+  const getResponseForGivenPrompt = async () => {
     try {
-      const response = await fetch('http://localhost:3001/process', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ input: inputValue }),
-      });
-
-      const data = await response.json();
-      if (data.result) {
-        setOutputValue(data.result);
-        changeImage();
-      } else if (data.error) {
-        setOutputValue(`Error: ${data.error}`);
-      } else {
-        setOutputValue('Unexpected response from server.');
+      setLoading(true)
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const result = await model.generateContent(inputValue + "as short as possible" + "talk like a doctor" + "be respect to the patient");
+      setInputValue('')
+      const response = result.response;
+      const text = response.text();
+      console.log(text)
+      //promptResponses('')
+      setpromptResponses([text]);
+  
+      setLoading(false)
+      while(Date.not() - start < 2000) {
+        setIsTalking(!isTalking);
       }
-    } catch (error) {
-      console.error('Error sending data:', error);
-      setOutputValue('Error sending data to the server.');
-    } finally {
-      setLoading(false);
+      isTalking(!setInputValue);
     }
+    catch (error) {
+      console.log(error)
+      console.log("Something Went Wrong");
+      setLoading(false)
+    }
+    let start = Date.now();
+    
   };
 
   const handleKeyDown = (event) => {
@@ -109,22 +113,48 @@ function App() {
         <img className=" left-[1500px] top-[550px] z-1 absolute" id="myImage" src={isTalking ? "/ai_bot_talking.gif" : "/ai_bot_silent.png"}
             onClick={() => setIsTalking(!isTalking)}/> 
         <button className="bg-[white] w-[180px] z-0 h-[150px] absolute left-[1805px] top-[920px] inline-block"> </button>
-        <div className="text-[40px] font-[Montserrat]">
-          <input
-            type="text"
-            className=" border bg-white p-2 absolute top-[1207px] left-[75px] rounded-lg w-[1500px] h-[100px]"
-            value={inputValue}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Enter text..."
-          />
+        <div className="container absolute left-[100px] text-[30px]">
+          <div className=" text-[50px]">
+            <div className=" text-[50px]">
+              <input
+                type="text"
+                value={inputValue}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask Me Something You Want"
+                className="form-control text-[30px]"
+              />
+              <button onClick={getResponseForGivenPrompt} className="btn btn-primary">Send</button>
+            </div>
+            {/* <div className="col-auto">
+              <button onClick={getResponseForGivenPrompt} className="btn btn-primary">Send</button>
+            </div> */}
+          </div>
+          {loading ? (
+            <div className="text-center mt-3">
+              {/* <div className="spinner-border text-primary" role="status"> */}
+                <span className="visually-hidden">Loading...</span>
+            // This message is shown while your answer to your prompt is being generated
+              {/* </div> */}
+            </div>
+          ) : (
+            promptResponses.map((promptResponse, index) => (
+              <div className="aa output-container absolute top-[-1000px] right-[-1300px] w-[784px] h-[340px] ">
+                <p className=" output-label font-[Montserrat] font text-[30px]">DOCTOR:</p>
+                <div className={` response-text indent-[90px] text-[25 px]`}>{promptResponse}</div>
+              </div>
+              // <div key={index} >
+              //   <div className={`response-text ${index === promptResponses.length - 1 ? 'fw-bold' : ''}`}>{promptResponse}</div>
+              // </div>
+            ))
+          )}
         </div>
-        {outputValue && (
+        {/* {outputValue && (
           <div className="output-container absolute top-[400px] right-[75px] w-[784px] h-[340px] bg-[url(./ai_textbox.png)]">
             <p className="output-label indent-[150px] font-[Montserrat] font text-[30px]">DOCTOR:</p>
             <p className="output-text text-center font-[Montserrat] font text-[30px]">{outputValue}</p>
           </div>
-        )}
+        )} */}
       </div>  
       <FooterPage />
     </div>
